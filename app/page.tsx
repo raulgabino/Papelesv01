@@ -2,9 +2,9 @@
 
 import { useState } from "react"
 import AnalystWorkstation from "@/analyst-workstation"
-import { ImmediateFeedbackTicker } from "@/components/immediate-feedback-ticker"
 import { DayEndSummaryScreen } from "@/components/day-end-summary-screen"
 import { SupervisorReviewPanel } from "@/components/supervisor-review-panel"
+import { ImmediateFeedbackTickerItem } from "@/components/immediate-feedback-ticker-item"
 
 export default function Home() {
   const [showDemo, setShowDemo] = useState(false)
@@ -44,16 +44,6 @@ export default function Home() {
             <button
               onClick={() => {
                 setShowDemo(true)
-                setDemoComponent("feedback")
-              }}
-              className="bg-blue-700 hover:bg-blue-600 p-4 border border-blue-800 text-center"
-            >
-              Ver Feedback Inmediato
-            </button>
-
-            <button
-              onClick={() => {
-                setShowDemo(true)
                 setDemoComponent("dayend")
               }}
               className="bg-purple-700 hover:bg-purple-600 p-4 border border-purple-800 text-center"
@@ -66,9 +56,19 @@ export default function Home() {
                 setShowDemo(true)
                 setDemoComponent("supervisor")
               }}
-              className="bg-amber-700 hover:bg-amber-600 p-4 border border-amber-800 text-center"
+              className="bg-sky-700 hover:bg-sky-600 p-4 border border-sky-800 text-center"
             >
               Ver Panel del Supervisor
+            </button>
+
+            <button
+              onClick={() => {
+                setShowDemo(true)
+                setDemoComponent("feedback")
+              }}
+              className="bg-amber-700 hover:bg-amber-600 p-4 border border-amber-800 text-center"
+            >
+              Ver Mensajes de Feedback
             </button>
           </div>
         </div>
@@ -83,43 +83,46 @@ export default function Home() {
           </button>
 
           {/* Componentes de demostración */}
-          {demoComponent === "workstation" && <AnalystWorkstation />}
-
-          {demoComponent === "feedback" && (
-            <div className="max-w-4xl mx-auto bg-slate-800 p-6 border border-slate-600 font-mono text-white">
-              <h2 className="text-xl text-amber-300 mb-6">Ejemplos de Feedback Inmediato</h2>
-
-              <div className="space-y-4">
-                <ImmediateFeedbackTicker
-                  message="¡Documento aprobado correctamente!"
-                  type="success"
-                  duration={100000} // Duración larga para la demo
-                />
-
-                <ImmediateFeedbackTicker message="Documento rechazado por 3 motivos" type="error" duration={100000} />
-
-                <ImmediateFeedbackTicker message="Cargando siguiente caso..." type="info" duration={100000} />
-              </div>
-            </div>
+          {demoComponent === "workstation" && (
+            <AnalystWorkstation
+              dayNumber={1}
+              currentSkillName="Comunicación Estratégica"
+              score={0}
+              isLoadingCase={false}
+            />
           )}
 
           {demoComponent === "dayend" && (
-            <div className="max-w-4xl mx-auto bg-slate-800 border border-slate-600 h-[600px]">
+            <div className="max-w-4xl mx-auto bg-slate-700 border border-slate-600 h-[600px] p-4">
               <DayEndSummaryScreen
                 skillName="Comunicación Estratégica"
                 finalScore={75}
-                onAcknowledge={() => handleDemoChange("supervisor")}
+                onProceedToReview={() => handleDemoChange("supervisor")}
               />
             </div>
           )}
 
           {demoComponent === "supervisor" && (
-            <div className="max-w-4xl mx-auto bg-slate-800 border border-slate-600 h-[600px]">
+            <div className="max-w-4xl mx-auto bg-slate-700 border border-slate-600 h-[600px] p-4">
               <SupervisorReviewPanel
                 supervisorName="Supervisor Martínez"
                 tips={supervisorTips}
                 onClose={() => handleDemoChange("workstation")}
               />
+            </div>
+          )}
+
+          {demoComponent === "feedback" && (
+            <div className="max-w-4xl mx-auto bg-slate-800 p-6 border border-slate-600 font-mono text-white">
+              <h2 className="text-xl text-amber-300 mb-6">Ejemplos de Mensajes de Feedback</h2>
+
+              <div className="space-y-4">
+                <ImmediateFeedbackTickerItem message="¡Documento aprobado correctamente!" type="success" />
+
+                <ImmediateFeedbackTickerItem message="Documento rechazado por 3 motivos: CE1, CE4, CE7" type="error" />
+
+                <ImmediateFeedbackTickerItem message="Cargando siguiente caso..." type="info" />
+              </div>
             </div>
           )}
         </>

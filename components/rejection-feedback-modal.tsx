@@ -1,7 +1,7 @@
 "use client"
 
 import { useState } from "react"
-import { CheckSquare, Square } from "lucide-react"
+import { X } from "lucide-react"
 
 interface RejectionOption {
   id: string
@@ -11,7 +11,7 @@ interface RejectionOption {
 interface RejectionFeedbackModalProps {
   isOpen: boolean
   onClose: () => void
-  onSubmitRejection: (data: { reasons: string[]; comments: string }) => void
+  onSubmitRejection: (feedback: { reasons: string[]; comments?: string }) => void
   rejectionOptions: RejectionOption[]
 }
 
@@ -33,74 +33,85 @@ export function RejectionFeedbackModal({
   const handleSubmit = () => {
     onSubmitRejection({
       reasons: selectedReasons,
-      comments,
+      comments: comments.trim() || undefined,
     })
     // Reset form
     setSelectedReasons([])
     setComments("")
+    onClose()
   }
 
   return (
-    <div className="fixed inset-0 flex items-center justify-center z-50 font-mono">
-      <div className="absolute inset-0 bg-black/70" onClick={onClose}></div>
-
-      <div className="relative bg-slate-800 border-2 border-slate-600 text-slate-200 w-full max-w-md max-h-[80vh] z-10">
+    <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 font-mono">
+      <div className="bg-slate-800 text-slate-200 border-2 border-slate-500 rounded-sm shadow-2xl w-full max-w-lg">
         {/* Header */}
-        <div className="bg-slate-700 border-b border-slate-600 p-3">
-          <h2 className="text-red-400 font-bold uppercase tracking-wide text-center">
-            Motivo del Rechazo (Comunicación Estratégica)
-          </h2>
+        <div className="flex justify-between items-center p-3 bg-slate-700 border-b border-slate-600">
+          <h2 className="text-lg font-mono font-bold text-red-400">MOTIVO DEL RECHAZO</h2>
+          <button
+            onClick={onClose}
+            className="bg-red-500 hover:bg-red-400 text-white h-6 w-6 flex items-center justify-center border-b-2 border-red-700"
+            aria-label="Cerrar"
+          >
+            <X className="h-4 w-4" style={{ imageRendering: "pixelated" }} />
+          </button>
         </div>
 
         {/* Content */}
-        <div className="p-4 overflow-auto max-h-[calc(80vh-8rem)]">
-          <div className="mb-4">
-            <h3 className="text-slate-300 mb-2 font-bold">Seleccione los motivos:</h3>
-            <ul className="list-none space-y-2">
-              {rejectionOptions.map((option) => (
-                <li
-                  key={option.id}
-                  className="flex items-start cursor-pointer hover:bg-slate-700 p-1"
-                  onClick={() => handleReasonToggle(option.id)}
-                >
-                  <div className="mr-2 mt-0.5">
-                    {selectedReasons.includes(option.id) ? (
-                      <CheckSquare className="w-5 h-5 text-red-400" />
-                    ) : (
-                      <Square className="w-5 h-5 text-slate-400" />
+        <div className="p-4">
+          <div className="mb-4 space-y-1 max-h-60 overflow-y-auto">
+            <div className="text-sm mb-2 text-slate-300">Seleccione los motivos de rechazo:</div>
+            {rejectionOptions.map((option) => (
+              <label
+                key={option.id}
+                className="flex items-start space-x-2 p-1.5 hover:bg-slate-700 rounded-sm cursor-pointer"
+              >
+                <div className="mt-0.5">
+                  <div
+                    className={`h-4 w-4 border ${
+                      selectedReasons.includes(option.id)
+                        ? "bg-blue-500 border-blue-600"
+                        : "bg-slate-600 border-slate-500"
+                    }`}
+                    onClick={() => handleReasonToggle(option.id)}
+                  >
+                    {selectedReasons.includes(option.id) && (
+                      <div className="flex items-center justify-center h-full text-white text-xs">✓</div>
                     )}
                   </div>
-                  <span>{option.label}</span>
-                </li>
-              ))}
-            </ul>
+                </div>
+                <span className="text-sm">{option.label}</span>
+              </label>
+            ))}
           </div>
 
-          <div>
-            <h3 className="text-slate-300 mb-2 font-bold">Comentarios Adicionales:</h3>
+          <div className="mb-4">
+            <label htmlFor="additionalComments" className="block text-xs font-mono mb-1 text-slate-400">
+              Comentarios Adicionales (Opcional):
+            </label>
             <textarea
+              id="additionalComments"
+              rows={3}
               value={comments}
               onChange={(e) => setComments(e.target.value)}
-              className="w-full h-24 bg-slate-600 text-slate-200 p-2 border border-slate-500 font-mono resize-none"
+              className="w-full bg-slate-600 text-slate-200 p-2 border border-slate-500 rounded-sm text-sm focus:ring-1 focus:ring-blue-400 outline-none resize-none font-mono"
             />
           </div>
-        </div>
 
-        {/* Footer */}
-        <div className="bg-slate-700 border-t border-slate-600 p-3 flex justify-between">
-          <button
-            onClick={onClose}
-            className="bg-slate-600 hover:bg-slate-500 text-white px-3 py-2 border-b-2 border-slate-800"
-          >
-            CANCELAR
-          </button>
-          <button
-            onClick={handleSubmit}
-            className="bg-red-600 hover:bg-red-700 text-white px-3 py-2 border-b-2 border-red-800"
-            disabled={selectedReasons.length === 0}
-          >
-            CONFIRMAR RECHAZO
-          </button>
+          <div className="flex justify-between gap-3 mt-4">
+            <button
+              onClick={onClose}
+              className="bg-slate-600 hover:bg-slate-500 text-white px-4 py-2 border-b-2 border-slate-800"
+            >
+              CANCELAR
+            </button>
+            <button
+              onClick={handleSubmit}
+              className="bg-red-600 hover:bg-red-500 text-white px-4 py-2 border-b-2 border-red-800"
+              disabled={selectedReasons.length === 0}
+            >
+              CONFIRMAR RECHAZO
+            </button>
+          </div>
         </div>
       </div>
     </div>

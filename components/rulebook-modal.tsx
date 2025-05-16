@@ -1,4 +1,5 @@
 "use client"
+
 import { X } from "lucide-react"
 
 interface RulebookModalProps {
@@ -12,24 +13,23 @@ export function RulebookModal({ isOpen, onClose, rulesTitle, rulesContent }: Rul
   if (!isOpen) return null
 
   return (
-    <div className="fixed inset-0 flex items-center justify-center z-50 font-mono">
-      <div className="absolute inset-0 bg-black/70" onClick={onClose}></div>
-
-      <div className="relative bg-slate-800 border-2 border-slate-600 text-slate-200 w-full max-w-2xl max-h-[80vh] z-10">
+    <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 font-mono">
+      <div className="bg-slate-800 text-slate-200 border-2 border-slate-500 rounded-sm shadow-2xl w-full max-w-md max-h-[80vh] flex flex-col">
         {/* Header */}
-        <div className="bg-slate-700 border-b border-slate-600 p-3 flex justify-between items-center">
-          <h2 className="text-amber-300 font-bold uppercase tracking-wide">{rulesTitle}</h2>
+        <div className="flex justify-between items-center p-3 bg-slate-700 border-b border-slate-600">
+          <h2 className="text-lg font-mono font-bold text-amber-300">{rulesTitle}</h2>
           <button
             onClick={onClose}
-            className="bg-red-600 hover:bg-red-700 text-white w-8 h-8 flex items-center justify-center border border-red-800"
+            className="bg-red-500 hover:bg-red-400 text-white h-6 w-6 flex items-center justify-center border-b-2 border-red-700"
+            aria-label="Cerrar"
           >
-            <X className="w-5 h-5" />
+            <X className="h-4 w-4" style={{ imageRendering: "pixelated" }} />
           </button>
         </div>
 
         {/* Content */}
-        <div className="p-4 overflow-auto max-h-[calc(80vh-4rem)]">
-          <ul className="list-none space-y-3">
+        <div className="flex-grow overflow-y-auto p-4">
+          <ul className="space-y-3">
             {rulesContent.map((rule, index) => (
               <li key={index} className="border-b border-slate-700 pb-2 last:border-0">
                 {rule}
@@ -39,7 +39,7 @@ export function RulebookModal({ isOpen, onClose, rulesTitle, rulesContent }: Rul
         </div>
 
         {/* Footer */}
-        <div className="bg-slate-700 border-t border-slate-600 p-3 text-center">
+        <div className="p-3 border-t border-slate-600 bg-slate-700 flex justify-center">
           <button
             onClick={onClose}
             className="bg-slate-600 hover:bg-slate-500 text-white px-4 py-2 border-b-2 border-slate-800"
