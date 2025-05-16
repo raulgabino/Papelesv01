@@ -5,63 +5,102 @@ import { Check, X, BookOpen, ArrowRight } from "lucide-react"
 import { PixelatedCaseDocument } from "@/components/pixelated-case-document"
 import { RulebookModal } from "@/components/rulebook-modal"
 import { RejectionFeedbackModal } from "@/components/rejection-feedback-modal"
+import { ImmediateFeedbackTicker } from "@/components/immediate-feedback-ticker"
 
-// Datos de ejemplo
-const exampleCaseData = {
-  title: "MEMORÁNDUM INTERNO",
-  sender: "Ana Gómez, Departamento de Innovación",
-  recipient: "Sr. Rodríguez, Director de Operaciones",
-  subject: "Propuesta de Proyecto: EcoIniciativa Oficina Verde",
-  body: "Estimado Sr. Rodríguez,\n\nLe escribo para proponer una nueva iniciativa que creo firmemente que será de gran beneficio. Se trata de implementar un sistema de reciclaje más eficiente y reducir nuestro consumo energético. Esto no solo ayudará al planeta, sino que también podría mejorar nuestra imagen corporativa y, a largo plazo, generar ahorros significativos.\n\nHe adjuntado un documento con más detalles, pero la idea central es instalar nuevos contenedores y cambiar a luces LED. Necesitaríamos una pequeña inversión inicial, pero los retornos son prometedores.\n\n¿Qué le parece si lo discutimos la próxima semana? Avíseme su disponibilidad.\n\nSaludos cordiales,\nAna Gómez\nDepartamento de Innovación",
-  attachments: ["Detalles_EcoIniciativa.pdf", "Presupuesto_Estimado.xlsx"],
+// Tipos
+export interface CaseData {
+  title?: string
+  sender?: string
+  recipient?: string
+  subject?: string
+  body: string
+  attachments?: string[]
 }
 
-const rulebookRules = [
-  "CE1: Claridad de ideas centrales - El mensaje principal debe ser fácil de entender.",
-  "CE2: Estructura lógica - La información debe presentarse en un orden que facilite la comprensión.",
-  "CE3: Adecuación al destinatario - El lenguaje y tono deben ser apropiados para quien recibe el mensaje.",
-  "CE4: Concisión - Comunicar lo necesario sin redundancias o información irrelevante.",
-  "CE5: Propósito claro - El objetivo de la comunicación debe ser evidente.",
-  "CE6: Datos precisos - La información factual debe ser exacta y verificable.",
-  "CE7: Llamado a la acción - Si se requiere una respuesta, debe especificarse claramente qué se espera.",
-  "CE8: Profesionalismo - Mantener un tono profesional y respetuoso en todo momento.",
-  "CE9: Coherencia visual - Los elementos visuales deben apoyar el mensaje, no distraer de él.",
-  "CE10: Corrección gramatical - El texto debe estar libre de errores ortográficos y gramaticales.",
-]
+export interface RuleItem {
+  id: string
+  name: string
+  description?: string
+}
 
-const rejectionOptions = [
-  { id: "CE1", label: "CE1: Falta de claridad en las ideas principales" },
-  { id: "CE2", label: "CE2: Estructura desorganizada o confusa" },
-  { id: "CE3", label: "CE3: Lenguaje o tono inapropiado para el destinatario" },
-  { id: "CE4", label: "CE4: Excesivamente verboso o redundante" },
-  { id: "CE5", label: "CE5: Propósito de la comunicación ambiguo" },
-  { id: "CE6", label: "CE6: Datos imprecisos o no verificables" },
-  { id: "CE7", label: "CE7: Falta de un llamado a la acción claro" },
-  { id: "CE8", label: "CE8: Tono poco profesional o irrespetuoso" },
-  { id: "CE9", label: "CE9: Elementos visuales distractores o inapropiados" },
-  { id: "CE10", label: "CE10: Errores ortográficos o gramaticales significativos" },
-]
-
-interface AnalystWorkstationProps {
+export interface AnalystWorkstationProps {
   dayNumber: number
   currentSkillName: string
   score: number
+  currentCaseData: CaseData | null
+  rulebookContent: RuleItem[] | null
+  feedbackText: string | null
+  feedbackType: "success" | "error" | "info" | null
   isLoadingCase: boolean
+  isLoadingNextCase: boolean
+  isNextCaseDisabled: boolean
+  onApprove: () => void
+  onReject: () => void
+  onNextCase: () => void
+  onToggleRulebook: () => void
 }
 
 export default function AnalystWorkstation({
   dayNumber = 1,
   currentSkillName = "Comunicación Estratégica",
   score = 0,
+  currentCaseData = null,
+  rulebookContent = [],
+  feedbackText = null,
+  feedbackType = null,
   isLoadingCase = false,
+  isLoadingNextCase = false,
+  isNextCaseDisabled = false,
+  onApprove = () => {},
+  onReject = () => {},
+  onNextCase = () => {},
+  onToggleRulebook = () => {},
 }: AnalystWorkstationProps) {
   const [isRulebookOpen, setIsRulebookOpen] = useState(false)
   const [isRejectionModalOpen, setIsRejectionModalOpen] = useState(false)
-  const [feedbackMessage, setFeedbackMessage] = useState<string | null>(null)
 
-  const handleApprove = () => {
-    setFeedbackMessage("Documento APROBADO. Buen trabajo, analista.")
-    // Aquí iría la lógica para procesar la aprobación
+  // Datos de ejemplo para el rulebook si no se proporciona
+  const defaultRulebookContent = [
+    {
+      id: "CE1",
+      name: "Claridad de ideas centrales",
+      description: "El mensaje principal debe ser fácil de entender.",
+    },
+    {
+      id: "CE2",
+      name: "Estructura lógica",
+      description: "La información debe presentarse en un orden que facilite la comprensión.",
+    },
+    {
+      id: "CE3",
+      name: "Adecuación al destinatario",
+      description: "El lenguaje y tono deben ser apropiados para quien recibe el mensaje.",
+    },
+    {
+      id: "CE4",
+      name: "Concisión",
+      description: "Comunicar lo necesario sin redundancias o información irrelevante.",
+    },
+    {
+      id: "CE5",
+      name: "Propósito claro",
+      description: "El objetivo de la comunicación debe ser evidente.",
+    },
+  ]
+
+  // Datos de ejemplo para el caso si no se proporciona
+  const defaultCaseData = {
+    title: "MEMORÁNDUM INTERNO",
+    sender: "Ana Gómez, Departamento de Innovación",
+    recipient: "Sr. Rodríguez, Director de Operaciones",
+    subject: "Propuesta de Proyecto: EcoIniciativa Oficina Verde",
+    body: "Estimado Sr. Rodríguez,\n\nLe escribo para proponer una nueva iniciativa que creo firmemente que será de gran beneficio. Se trata de implementar un sistema de reciclaje más eficiente y reducir nuestro consumo energético. Esto no solo ayudará al planeta, sino que también podría mejorar nuestra imagen corporativa y, a largo plazo, generar ahorros significativos.\n\nHe adjuntado un documento con más detalles, pero la idea central es instalar nuevos contenedores y cambiar a luces LED. Necesitaríamos una pequeña inversión inicial, pero los retornos son prometedores.\n\n¿Qué le parece si lo discutimos la próxima semana? Avíseme su disponibilidad.\n\nSaludos cordiales,\nAna Gómez\nDepartamento de Innovación",
+    attachments: ["Detalles_EcoIniciativa.pdf", "Presupuesto_Estimado.xlsx"],
+  }
+
+  const handleToggleRulebook = () => {
+    setIsRulebookOpen(!isRulebookOpen)
+    onToggleRulebook()
   }
 
   const handleReject = () => {
@@ -69,66 +108,82 @@ export default function AnalystWorkstation({
   }
 
   const handleSubmitRejection = (feedback: { reasons: string[]; comments?: string }) => {
-    setFeedbackMessage(
-      `Documento RECHAZADO. Motivos: ${feedback.reasons.join(", ")}${
-        feedback.comments ? `. Comentarios: ${feedback.comments}` : ""
-      }`,
-    )
     setIsRejectionModalOpen(false)
-    // Aquí iría la lógica para procesar el rechazo
+    onReject()
   }
 
-  const handleNextCase = () => {
-    setFeedbackMessage("Cargando siguiente caso...")
-    // Aquí iría la lógica para cargar el siguiente caso
-  }
+  // Usar los datos proporcionados o los datos por defecto
+  const caseToDisplay = currentCaseData || defaultCaseData
+  const rulesToDisplay = rulebookContent || defaultRulebookContent
+
+  // Convertir las reglas al formato esperado por RulebookModal
+  const formattedRules = rulesToDisplay.map((rule) => `${rule.id}: ${rule.name} - ${rule.description || ""}`)
 
   return (
     <div className="flex flex-col min-h-screen bg-slate-900 font-mono text-slate-200">
       {/* InfoBar - Barra Superior */}
-      <div className="w-full bg-slate-800 p-2 border-b border-slate-600 flex justify-between items-center">
+      <div className="w-full bg-slate-800 p-2 border-b-2 border-slate-600 flex justify-between items-center">
         <span className="text-amber-300 font-mono text-sm">DÍA: {dayNumber}</span>
         <span className="text-sky-300 font-mono text-sm">HABILIDAD: {currentSkillName}</span>
         <span className="text-green-300 font-mono text-sm">PUNTUACIÓN: {score} PTS</span>
       </div>
 
       {/* WorkspaceArea - Área Central */}
-      <div className="flex-grow flex p-4 gap-4">
+      <div className="flex-grow p-4 flex flex-col md:flex-row gap-4 overflow-hidden">
         {/* CaseDocumentDisplay - Área Principal */}
-        <div className="flex-grow-[2] bg-slate-700 p-4 border border-slate-600 rounded-sm overflow-y-auto">
+        <div className="flex-grow-[2] bg-slate-700 p-3 md:p-4 border border-slate-600 rounded-sm overflow-y-auto">
           {isLoadingCase ? (
-            <div className="w-full h-full flex items-center justify-center text-slate-400">CARGANDO CASO...</div>
+            <div className="w-full h-full flex items-center justify-center text-slate-400 font-mono">
+              <div className="animate-pulse flex flex-col items-center">
+                <div className="mb-2">CARGANDO CASO...</div>
+                <div className="h-2 w-24 bg-slate-600 rounded"></div>
+              </div>
+            </div>
           ) : (
-            <PixelatedCaseDocument caseData={exampleCaseData} />
+            <PixelatedCaseDocument caseData={caseToDisplay} />
           )}
         </div>
 
-        {/* RulebookPanelToggle - Área Secundaria */}
-        <div className="flex-grow-[1] max-w-xs flex flex-col">
+        {/* RulebookPanelArea - Área Secundaria */}
+        <div className="flex-grow-[1] max-w-xs bg-slate-800 p-3 border border-slate-600 rounded-sm flex flex-col">
           <button
-            onClick={() => setIsRulebookOpen(true)}
-            className="bg-sky-600 hover:bg-sky-500 text-white py-2 px-4 border-b-4 border-sky-800 rounded-sm mb-2 flex items-center justify-center"
+            onClick={handleToggleRulebook}
+            className="bg-sky-600 hover:bg-sky-500 text-white py-2 px-4 border-b-4 border-sky-800 rounded-sm mb-2 flex items-center justify-center font-mono font-bold"
           >
             <BookOpen className="w-4 h-4 mr-2" style={{ imageRendering: "pixelated" }} />
             VER MANUAL
           </button>
+
+          <div className="text-xs text-slate-400 mt-2 flex-grow">
+            <p className="mb-2">Consulta el manual para revisar las reglas de evaluación.</p>
+            <p>Recuerda que cada decisión afecta tu puntuación final.</p>
+          </div>
         </div>
       </div>
 
       {/* ControlsAndFeedbackPanel - Panel Inferior */}
-      <div className="w-full bg-slate-800 p-3 border-t border-slate-600">
+      <div className="w-full bg-slate-800 p-3 md:p-4 border-t-2 border-slate-600 shadow-inner">
+        {/* ImmediateFeedbackTicker - Área de Feedback */}
+        <div className="h-8 text-center font-mono text-sm rounded-sm flex items-center justify-center mb-3 px-2">
+          {feedbackText && feedbackType && (
+            <ImmediateFeedbackTicker message={feedbackText} type={feedbackType} duration={5000} />
+          )}
+        </div>
+
         {/* ActionStamps - Botones de Acción */}
-        <div className="flex justify-center items-center gap-4 mb-4">
+        <div className="flex justify-center items-center gap-4 md:gap-6 mb-3">
           <button
-            onClick={handleApprove}
-            className="bg-green-500 hover:bg-green-400 text-white p-3 border-b-4 border-green-700 rounded-sm flex items-center"
+            onClick={onApprove}
+            className="bg-green-500 hover:bg-green-400 text-white py-3 px-5 md:py-4 md:px-6 border-b-4 border-green-700 rounded-sm flex items-center font-mono font-bold text-base md:text-lg"
+            disabled={isLoadingCase || isLoadingNextCase}
           >
             <Check className="w-6 h-6 mr-2" style={{ imageRendering: "pixelated" }} />
             APROBAR
           </button>
           <button
             onClick={handleReject}
-            className="bg-red-500 hover:bg-red-400 text-white p-3 border-b-4 border-red-700 rounded-sm flex items-center"
+            className="bg-red-500 hover:bg-red-400 text-white py-3 px-5 md:py-4 md:px-6 border-b-4 border-red-700 rounded-sm flex items-center font-mono font-bold text-base md:text-lg"
+            disabled={isLoadingCase || isLoadingNextCase}
           >
             <X className="w-6 h-6 mr-2" style={{ imageRendering: "pixelated" }} />
             RECHAZAR
@@ -136,23 +191,30 @@ export default function AnalystWorkstation({
         </div>
 
         {/* CaseNavigationControls - Navegación */}
-        <div className="flex justify-end items-center mb-2">
-          <button
-            onClick={handleNextCase}
-            className="bg-amber-500 hover:bg-amber-400 text-white py-2 px-4 border-b-4 border-amber-700 rounded-sm flex items-center"
-          >
-            SIGUIENTE CASO
-            <ArrowRight className="w-4 h-4 ml-2" style={{ imageRendering: "pixelated" }} />
-          </button>
-        </div>
+        <div className="flex justify-between items-center">
+          {/* Placeholder para Mensaje de Carga */}
+          <div className="w-1/3 text-left">
+            {isLoadingNextCase && (
+              <span className="text-sm font-mono text-slate-400 animate-pulse">Cargando siguiente caso...</span>
+            )}
+          </div>
 
-        {/* ImmediateFeedbackTicker - Área de Feedback */}
-        <div className="h-6 text-center text-sm font-mono">
-          {feedbackMessage ? (
-            <span className="text-amber-300 animate-pulse">{feedbackMessage}</span>
-          ) : (
-            <span className="text-slate-400">Feedback aparecerá aquí...</span>
-          )}
+          {/* Espacio central */}
+          <div className="w-1/3 flex justify-center"></div>
+
+          {/* Botón Siguiente Caso */}
+          <div className="w-1/3 text-right">
+            <button
+              onClick={onNextCase}
+              disabled={isNextCaseDisabled || isLoadingCase || isLoadingNextCase}
+              className={`bg-amber-500 hover:bg-amber-400 text-white py-2 px-4 border-b-4 border-amber-700 rounded-sm flex items-center font-mono font-bold ml-auto ${
+                isNextCaseDisabled || isLoadingCase || isLoadingNextCase ? "opacity-50 cursor-not-allowed" : ""
+              }`}
+            >
+              SIGUIENTE CASO
+              <ArrowRight className="w-4 h-4 ml-2" style={{ imageRendering: "pixelated" }} />
+            </button>
+          </div>
         </div>
       </div>
 
@@ -160,15 +222,15 @@ export default function AnalystWorkstation({
       <RulebookModal
         isOpen={isRulebookOpen}
         onClose={() => setIsRulebookOpen(false)}
-        rulesTitle="Manual de Comunicación Estratégica"
-        rulesContent={rulebookRules}
+        rulesTitle={`Manual de ${currentSkillName}`}
+        rulesContent={formattedRules}
       />
 
       <RejectionFeedbackModal
         isOpen={isRejectionModalOpen}
         onClose={() => setIsRejectionModalOpen(false)}
         onSubmitRejection={handleSubmitRejection}
-        rejectionOptions={rejectionOptions}
+        rejectionOptions={rulesToDisplay.map((rule) => ({ id: rule.id, label: `${rule.id}: ${rule.name}` }))}
       />
     </div>
   )

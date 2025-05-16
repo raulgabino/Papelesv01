@@ -2,131 +2,119 @@
 
 import { useState } from "react"
 import AnalystWorkstation from "@/analyst-workstation"
-import { DayEndSummaryScreen } from "@/components/day-end-summary-screen"
-import { SupervisorReviewPanel } from "@/components/supervisor-review-panel"
-import { ImmediateFeedbackTickerItem } from "@/components/immediate-feedback-ticker-item"
 
 export default function Home() {
-  const [showDemo, setShowDemo] = useState(false)
-  const [demoComponent, setDemoComponent] = useState<string>("workstation")
+  // Estado para controlar el flujo del juego
+  const [dayNumber, setDayNumber] = useState(1)
+  const [score, setScore] = useState(0)
+  const [isLoadingCase, setIsLoadingCase] = useState(false)
+  const [isLoadingNextCase, setIsLoadingNextCase] = useState(false)
+  const [isNextCaseDisabled, setIsNextCaseDisabled] = useState(true)
+  const [feedbackText, setFeedbackText] = useState<string | null>(null)
+  const [feedbackType, setFeedbackType] = useState<"success" | "error" | "info" | null>(null)
+  const [caseReviewed, setCaseReviewed] = useState(false)
 
-  // Datos de ejemplo para los componentes de demostración
-  const supervisorTips = [
-    "Asegúrate de verificar siempre la coherencia entre el asunto y el contenido del mensaje. Algunos casos tenían discrepancias sutiles.",
-    "Cuando evalúes propuestas de proyectos, presta especial atención a si incluyen datos concretos que respalden las afirmaciones.",
-    "Los mensajes que solicitan acciones específicas deben incluir plazos claros. Varios casos aprobados carecían de esta información esencial.",
-    "La formalidad del lenguaje debe adaptarse al destinatario. Recuerda que la comunicación con directivos requiere un tono más formal que la comunicación entre departamentos del mismo nivel.",
-    "Las comunicaciones efectivas suelen tener una estructura clara: introducción, desarrollo y conclusión. Busca esta estructura al evaluar los casos.",
+  // Datos de ejemplo para el caso actual
+  const currentCaseData = {
+    title: "MEMORÁNDUM INTERNO",
+    sender: "Ana Gómez, Departamento de Innovación",
+    recipient: "Sr. Rodríguez, Director de Operaciones",
+    subject: "Propuesta de Proyecto: EcoIniciativa Oficina Verde",
+    body: "Estimado Sr. Rodríguez,\n\nLe escribo para proponer una nueva iniciativa que creo firmemente que será de gran beneficio. Se trata de implementar un sistema de reciclaje más eficiente y reducir nuestro consumo energético. Esto no solo ayudará al planeta, sino que también podría mejorar nuestra imagen corporativa y, a largo plazo, generar ahorros significativos.\n\nHe adjuntado un documento con más detalles, pero la idea central es instalar nuevos contenedores y cambiar a luces LED. Necesitaríamos una pequeña inversión inicial, pero los retornos son prometedores.\n\n¿Qué le parece si lo discutimos la próxima semana? Avíseme su disponibilidad.\n\nSaludos cordiales,\nAna Gómez\nDepartamento de Innovación",
+    attachments: ["Detalles_EcoIniciativa.pdf", "Presupuesto_Estimado.xlsx"],
+  }
+
+  // Datos de ejemplo para el rulebook
+  const rulebookContent = [
+    {
+      id: "CE1",
+      name: "Claridad de ideas centrales",
+      description: "El mensaje principal debe ser fácil de entender.",
+    },
+    {
+      id: "CE2",
+      name: "Estructura lógica",
+      description: "La información debe presentarse en un orden que facilite la comprensión.",
+    },
+    {
+      id: "CE3",
+      name: "Adecuación al destinatario",
+      description: "El lenguaje y tono deben ser apropiados para quien recibe el mensaje.",
+    },
+    {
+      id: "CE4",
+      name: "Concisión",
+      description: "Comunicar lo necesario sin redundancias o información irrelevante.",
+    },
+    {
+      id: "CE5",
+      name: "Propósito claro",
+      description: "El objetivo de la comunicación debe ser evidente.",
+    },
   ]
 
-  // Función para cambiar entre componentes de demostración
-  const handleDemoChange = (component: string) => {
-    setDemoComponent(component)
+  // Manejadores de eventos
+  const handleApprove = () => {
+    setFeedbackText("¡Documento APROBADO! Buen trabajo, analista.")
+    setFeedbackType("success")
+    setScore((prev) => prev + 10)
+    setCaseReviewed(true)
+    setIsNextCaseDisabled(false)
+  }
+
+  const handleReject = () => {
+    setFeedbackText("Documento RECHAZADO. Se han registrado los motivos.")
+    setFeedbackType("error")
+    setScore((prev) => prev + 5) // Menos puntos por rechazar
+    setCaseReviewed(true)
+    setIsNextCaseDisabled(false)
+  }
+
+  const handleNextCase = () => {
+    setFeedbackText("Cargando siguiente caso...")
+    setFeedbackType("info")
+    setIsLoadingNextCase(true)
+    setCaseReviewed(false)
+    setIsNextCaseDisabled(true)
+
+    // Simular carga del siguiente caso
+    setTimeout(() => {
+      setDayNumber((prev) => prev + 1)
+      setIsLoadingNextCase(false)
+      setFeedbackText(null)
+      setFeedbackType(null)
+    }, 2000)
+  }
+
+  const handleToggleRulebook = () => {
+    setFeedbackText("Consultando manual de normas...")
+    setFeedbackType("info")
+
+    // Limpiar el mensaje después de un tiempo
+    setTimeout(() => {
+      setFeedbackText(null)
+      setFeedbackType(null)
+    }, 2000)
   }
 
   return (
-    <main className="min-h-screen bg-slate-900 p-4">
-      {!showDemo ? (
-        <div className="max-w-4xl mx-auto bg-slate-800 p-6 border border-slate-600 font-mono text-white">
-          <h1 className="text-2xl text-amber-300 mb-6 text-center">SKILL INSPECTOR - DEMOSTRACIÓN DE COMPONENTES</h1>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
-            <button
-              onClick={() => {
-                setShowDemo(true)
-                setDemoComponent("workstation")
-              }}
-              className="bg-slate-700 hover:bg-slate-600 p-4 border border-slate-600 text-center"
-            >
-              Ver Estación de Trabajo
-            </button>
-
-            <button
-              onClick={() => {
-                setShowDemo(true)
-                setDemoComponent("dayend")
-              }}
-              className="bg-purple-700 hover:bg-purple-600 p-4 border border-purple-800 text-center"
-            >
-              Ver Resumen de Fin de Día
-            </button>
-
-            <button
-              onClick={() => {
-                setShowDemo(true)
-                setDemoComponent("supervisor")
-              }}
-              className="bg-sky-700 hover:bg-sky-600 p-4 border border-sky-800 text-center"
-            >
-              Ver Panel del Supervisor
-            </button>
-
-            <button
-              onClick={() => {
-                setShowDemo(true)
-                setDemoComponent("feedback")
-              }}
-              className="bg-amber-700 hover:bg-amber-600 p-4 border border-amber-800 text-center"
-            >
-              Ver Mensajes de Feedback
-            </button>
-          </div>
-        </div>
-      ) : (
-        <>
-          {/* Botón para volver */}
-          <button
-            onClick={() => setShowDemo(false)}
-            className="mb-4 bg-slate-700 hover:bg-slate-600 px-4 py-2 border border-slate-600 font-mono text-white"
-          >
-            ← VOLVER AL MENÚ
-          </button>
-
-          {/* Componentes de demostración */}
-          {demoComponent === "workstation" && (
-            <AnalystWorkstation
-              dayNumber={1}
-              currentSkillName="Comunicación Estratégica"
-              score={0}
-              isLoadingCase={false}
-            />
-          )}
-
-          {demoComponent === "dayend" && (
-            <div className="max-w-4xl mx-auto bg-slate-700 border border-slate-600 h-[600px] p-4">
-              <DayEndSummaryScreen
-                skillName="Comunicación Estratégica"
-                finalScore={75}
-                onProceedToReview={() => handleDemoChange("supervisor")}
-              />
-            </div>
-          )}
-
-          {demoComponent === "supervisor" && (
-            <div className="max-w-4xl mx-auto bg-slate-700 border border-slate-600 h-[600px] p-4">
-              <SupervisorReviewPanel
-                supervisorName="Supervisor Martínez"
-                tips={supervisorTips}
-                onClose={() => handleDemoChange("workstation")}
-              />
-            </div>
-          )}
-
-          {demoComponent === "feedback" && (
-            <div className="max-w-4xl mx-auto bg-slate-800 p-6 border border-slate-600 font-mono text-white">
-              <h2 className="text-xl text-amber-300 mb-6">Ejemplos de Mensajes de Feedback</h2>
-
-              <div className="space-y-4">
-                <ImmediateFeedbackTickerItem message="¡Documento aprobado correctamente!" type="success" />
-
-                <ImmediateFeedbackTickerItem message="Documento rechazado por 3 motivos: CE1, CE4, CE7" type="error" />
-
-                <ImmediateFeedbackTickerItem message="Cargando siguiente caso..." type="info" />
-              </div>
-            </div>
-          )}
-        </>
-      )}
+    <main className="min-h-screen bg-slate-900">
+      <AnalystWorkstation
+        dayNumber={dayNumber}
+        currentSkillName="Comunicación Estratégica"
+        score={score}
+        currentCaseData={currentCaseData}
+        rulebookContent={rulebookContent}
+        feedbackText={feedbackText}
+        feedbackType={feedbackType}
+        isLoadingCase={isLoadingCase}
+        isLoadingNextCase={isLoadingNextCase}
+        isNextCaseDisabled={isNextCaseDisabled}
+        onApprove={handleApprove}
+        onReject={handleReject}
+        onNextCase={handleNextCase}
+        onToggleRulebook={handleToggleRulebook}
+      />
     </main>
   )
 }

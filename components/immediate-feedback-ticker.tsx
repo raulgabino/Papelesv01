@@ -18,7 +18,7 @@ export function ImmediateFeedbackTicker({ message, type, duration = 3000 }: Imme
     }, duration)
 
     return () => clearTimeout(timer)
-  }, [duration])
+  }, [duration, message])
 
   if (!visible) return null
 
@@ -38,11 +38,11 @@ export function ImmediateFeedbackTicker({ message, type, duration = 3000 }: Imme
   const getIcon = () => {
     switch (type) {
       case "success":
-        return <CheckCircle className="w-5 h-5 mr-2" style={{ imageRendering: "pixelated" }} />
+        return <CheckCircle className="w-4 h-4 mr-2" style={{ imageRendering: "pixelated" }} />
       case "error":
-        return <XCircle className="w-5 h-5 mr-2" style={{ imageRendering: "pixelated" }} />
+        return <XCircle className="w-4 h-4 mr-2" style={{ imageRendering: "pixelated" }} />
       case "info":
-        return <Info className="w-5 h-5 mr-2" style={{ imageRendering: "pixelated" }} />
+        return <Info className="w-4 h-4 mr-2" style={{ imageRendering: "pixelated" }} />
       default:
         return null
     }
@@ -50,7 +50,7 @@ export function ImmediateFeedbackTicker({ message, type, duration = 3000 }: Imme
 
   return (
     <div
-      className={`${getBackgroundColor()} border border-slate-600 p-2 flex items-center justify-center font-mono animate-pulse`}
+      className={`${getBackgroundColor()} border border-slate-600 px-3 py-1 rounded-sm flex items-center justify-center font-mono animate-fadeIn`}
     >
       <div className="flex items-center text-amber-100">
         {getIcon()}

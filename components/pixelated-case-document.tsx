@@ -15,7 +15,7 @@ interface PixelatedCaseDocumentProps {
 
 export function PixelatedCaseDocument({ caseData }: PixelatedCaseDocumentProps) {
   return (
-    <div className="bg-amber-100 text-slate-800 border border-slate-400 w-full h-full overflow-auto font-mono p-3">
+    <div className="bg-amber-100 text-slate-800 border border-slate-400 w-full h-full overflow-auto font-mono p-3 min-h-[calc(100vh-250px)]">
       {caseData.title && (
         <h3 className="text-lg font-mono font-bold mb-2 text-center border-b border-slate-300 pb-2">
           {caseData.title}
