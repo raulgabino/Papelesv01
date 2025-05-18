@@ -2,9 +2,18 @@
 
 import { useState } from "react"
 import AnalystWorkstation from "@/analyst-workstation"
+import { IntroSequence } from "@/components/intro-sequence"
+import { TutorialOverlay } from "@/components/tutorial-overlay"
 
 export default function Home() {
   // Estado para controlar el flujo del juego
+  const [gameState, setGameState] = useState<
+    "intro" | "tutorial" | "playing" | "day_end_summary" | "supervisor_review"
+  >("intro")
+  const [currentTutorialStep, setCurrentTutorialStep] = useState(0)
+  const isTutorialActive = gameState === "tutorial"
+
+  // Estados del juego
   const [dayNumber, setDayNumber] = useState(1)
   const [score, setScore] = useState(0)
   const [isLoadingCase, setIsLoadingCase] = useState(false)
@@ -13,12 +22,66 @@ export default function Home() {
   const [feedbackText, setFeedbackText] = useState<string | null>(null)
   const [feedbackType, setFeedbackType] = useState<"success" | "error" | "info" | null>(null)
   const [caseReviewed, setCaseReviewed] = useState(false)
-
-  // Nuevo estado para rastrear el índice del caso actual
   const [currentCaseIndex, setCurrentCaseIndex] = useState(0)
+  const [allCasesCompleted, setAllCasesCompleted] = useState(false)
 
-  // Array de casos en lugar de un solo caso estático
+  // Mensajes del tutorial
+  const tutorialMessages = [
+    {
+      text: "Bienvenido/a, Analista. Esta es su InfoBar: Día, Habilidad y Puntuación.",
+      highlightId: "infobar",
+      showButton: true,
+    },
+    {
+      text: "Aquí se mostrará el CASO a analizar. Léalo con atención.",
+      highlightId: "case-display-area",
+      showButton: true,
+    },
+    {
+      text: "Consulte el MANUAL DE NORMAS para conocer los criterios de evaluación. Es vital.",
+      highlightId: "rulebook-button",
+      showButton: true,
+    },
+    {
+      text: "Después de revisar el caso, use el sello APROBAR si cumple con los criterios.",
+      highlightId: "approve-button",
+      showButton: true,
+    },
+    {
+      text: "O use el sello RECHAZAR si no cumple con los criterios. Deberá especificar los motivos.",
+      highlightId: "reject-button",
+      showButton: true,
+    },
+    {
+      text: "Aquí aparecerá el feedback de sus decisiones.",
+      highlightId: "feedback-ticker",
+      showButton: true,
+    },
+    {
+      text: "Una vez tomada una decisión, use SIGUIENTE CASO para continuar.",
+      highlightId: "next-case-button",
+      showButton: true,
+    },
+    {
+      text: "¡Excelente! Ha completado el entrenamiento. Su jornada real comienza ahora.",
+      highlightId: null,
+      showButton: false,
+    },
+  ]
+
+  // Array de casos
   const allCases = [
+    // Caso especial para el tutorial - más simple
+    {
+      id: 0,
+      title: "MEMORÁNDUM DE PRUEBA",
+      sender: "Departamento de Formación",
+      recipient: "Analista Junior (Tú)",
+      subject: "Documento de Práctica",
+      body: "Este es un documento de prueba para familiarizarte con el sistema.\n\nPor favor, revisa si este documento cumple con las normas básicas de comunicación profesional.\n\nEste documento está correctamente estructurado y debe ser APROBADO como parte de tu entrenamiento.\n\nDepartamento de Formación",
+      attachments: ["Guía_Básica.pdf"],
+    },
+    // Casos regulares
     {
       id: 1,
       title: "MEMORÁNDUM INTERNO",
@@ -47,9 +110,6 @@ export default function Home() {
       attachments: ["Propuesta_CampañaQ3.docx", "Estimacion_Costos_Q3.xlsx"],
     },
   ]
-
-  // Estado para controlar si todos los casos han sido procesados
-  const [allCasesCompleted, setAllCasesCompleted] = useState(false)
 
   // Datos de ejemplo para el rulebook
   const rulebookContent = [
@@ -80,7 +140,33 @@ export default function Home() {
     },
   ]
 
-  // Manejadores de eventos
+  // Manejadores para la secuencia de introducción y tutorial
+  const handleIntroComplete = () => {
+    setGameState("tutorial")
+    setCurrentTutorialStep(0)
+  }
+
+  const advanceTutorialStep = () => {
+    const nextStep = currentTutorialStep + 1
+    if (nextStep >= tutorialMessages.length) {
+      // Fin del tutorial, comenzar el juego real
+      setGameState("playing")
+      // Reiniciar para el primer caso real
+      setCurrentCaseIndex(1) // Saltar el caso de tutorial
+      setCaseReviewed(false)
+      setIsNextCaseDisabled(true)
+      setFeedbackText("¡Comienza tu primera jornada real!")
+      setFeedbackType("info")
+      setTimeout(() => {
+        setFeedbackText(null)
+        setFeedbackType(null)
+      }, 3000)
+    } else {
+      setCurrentTutorialStep(nextStep)
+    }
+  }
+
+  // Manejadores de eventos del juego
   const handleApprove = () => {
     if (allCasesCompleted) return
 
@@ -89,6 +175,14 @@ export default function Home() {
     setScore((prev) => prev + 10)
     setCaseReviewed(true)
     setIsNextCaseDisabled(false)
+
+    // Si estamos en el tutorial y es el paso que muestra el botón aprobar
+    if (isTutorialActive && tutorialMessages[currentTutorialStep]?.highlightId === "approve-button") {
+      // Avanzar automáticamente al siguiente paso después de un breve retraso
+      setTimeout(() => {
+        advanceTutorialStep()
+      }, 1500)
+    }
   }
 
   const handleReject = () => {
@@ -99,10 +193,25 @@ export default function Home() {
     setScore((prev) => prev + 5) // Menos puntos por rechazar
     setCaseReviewed(true)
     setIsNextCaseDisabled(false)
+
+    // Si estamos en el tutorial y es el paso que muestra el botón rechazar
+    if (isTutorialActive && tutorialMessages[currentTutorialStep]?.highlightId === "reject-button") {
+      // Avanzar automáticamente al siguiente paso después de un breve retraso
+      setTimeout(() => {
+        advanceTutorialStep()
+      }, 1500)
+    }
   }
 
   const handleNextCase = () => {
     if (allCasesCompleted) return
+
+    // Si estamos en el tutorial y es el paso que muestra el botón siguiente caso
+    if (isTutorialActive && tutorialMessages[currentTutorialStep]?.highlightId === "next-case-button") {
+      // Avanzar al siguiente paso del tutorial en lugar de cargar un nuevo caso
+      advanceTutorialStep()
+      return
+    }
 
     setFeedbackText("Cargando siguiente caso...")
     setFeedbackType("info")
@@ -136,6 +245,14 @@ export default function Home() {
     setFeedbackText("Consultando manual de normas...")
     setFeedbackType("info")
 
+    // Si estamos en el tutorial y es el paso que muestra el botón del manual
+    if (isTutorialActive && tutorialMessages[currentTutorialStep]?.highlightId === "rulebook-button") {
+      // Avanzar automáticamente al siguiente paso después de un breve retraso
+      setTimeout(() => {
+        advanceTutorialStep()
+      }, 1500)
+    }
+
     // Limpiar el mensaje después de un tiempo
     setTimeout(() => {
       setFeedbackText(null)
@@ -145,22 +262,38 @@ export default function Home() {
 
   return (
     <main className="min-h-screen bg-slate-900">
-      <AnalystWorkstation
-        dayNumber={dayNumber}
-        currentSkillName="Comunicación Estratégica"
-        score={score}
-        currentCaseData={allCasesCompleted ? null : allCases[currentCaseIndex]}
-        rulebookContent={rulebookContent}
-        feedbackText={feedbackText}
-        feedbackType={feedbackType}
-        isLoadingCase={isLoadingCase}
-        isLoadingNextCase={isLoadingNextCase}
-        isNextCaseDisabled={isNextCaseDisabled || allCasesCompleted}
-        onApprove={handleApprove}
-        onReject={handleReject}
-        onNextCase={handleNextCase}
-        onToggleRulebook={handleToggleRulebook}
-      />
+      {gameState === "intro" ? (
+        <IntroSequence onIntroComplete={handleIntroComplete} />
+      ) : (
+        <>
+          <AnalystWorkstation
+            dayNumber={dayNumber}
+            currentSkillName="Comunicación Estratégica"
+            score={score}
+            currentCaseData={allCasesCompleted ? null : allCases[currentCaseIndex]}
+            rulebookContent={rulebookContent}
+            feedbackText={feedbackText}
+            feedbackType={feedbackType}
+            isLoadingCase={isLoadingCase}
+            isLoadingNextCase={isLoadingNextCase}
+            isNextCaseDisabled={isNextCaseDisabled || allCasesCompleted}
+            onApprove={handleApprove}
+            onReject={handleReject}
+            onNextCase={handleNextCase}
+            onToggleRulebook={handleToggleRulebook}
+          />
+
+          {isTutorialActive && (
+            <TutorialOverlay
+              isActive={isTutorialActive}
+              message={tutorialMessages[currentTutorialStep]?.text || ""}
+              highlightElementId={tutorialMessages[currentTutorialStep]?.highlightId || undefined}
+              showNextButton={tutorialMessages[currentTutorialStep]?.showButton || false}
+              onNextStep={advanceTutorialStep}
+            />
+          )}
+        </>
+      )}
     </main>
   )
 }

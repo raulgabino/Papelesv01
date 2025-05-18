@@ -126,7 +126,10 @@ export default function AnalystWorkstation({
   return (
     <div className="flex flex-col min-h-screen bg-slate-900 font-mono text-slate-200">
       {/* InfoBar - Barra Superior */}
-      <div className="w-full bg-slate-800 p-2 border-b-2 border-slate-600 flex justify-between items-center">
+      <div
+        id="infobar"
+        className="w-full bg-slate-800 p-2 border-b-2 border-slate-600 flex justify-between items-center"
+      >
         <span className="text-amber-300 font-mono text-sm">DÍA: {dayNumber}</span>
         <span className="text-sky-300 font-mono text-sm">HABILIDAD: {currentSkillName}</span>
         <span className="text-green-300 font-mono text-sm">PUNTUACIÓN: {score} PTS</span>
@@ -135,7 +138,10 @@ export default function AnalystWorkstation({
       {/* WorkspaceArea - Área Central */}
       <div className="flex-grow p-4 flex flex-col md:flex-row gap-4 overflow-hidden">
         {/* CaseDocumentDisplay - Área Principal */}
-        <div className="flex-grow-[2] bg-slate-700 p-3 md:p-4 border border-slate-600 rounded-sm overflow-y-auto">
+        <div
+          id="case-display-area"
+          className="flex-grow-[2] bg-slate-700 p-3 md:p-4 border border-slate-600 rounded-sm overflow-y-auto"
+        >
           {isLoadingCase ? (
             <div className="w-full h-full flex items-center justify-center text-slate-400 font-mono">
               <div className="animate-pulse flex flex-col items-center">
@@ -161,6 +167,7 @@ export default function AnalystWorkstation({
         {/* RulebookPanelArea - Área Secundaria */}
         <div className="flex-grow-[1] max-w-xs bg-slate-800 p-3 border border-slate-600 rounded-sm flex flex-col">
           <button
+            id="rulebook-button"
             onClick={handleToggleRulebook}
             className="bg-sky-600 hover:bg-sky-500 text-white py-2 px-4 border-b-4 border-sky-800 rounded-sm mb-2 flex items-center justify-center font-mono font-bold"
           >
@@ -178,7 +185,10 @@ export default function AnalystWorkstation({
       {/* ControlsAndFeedbackPanel - Panel Inferior */}
       <div className="w-full bg-slate-800 p-3 md:p-4 border-t-2 border-slate-600 shadow-inner">
         {/* ImmediateFeedbackTicker - Área de Feedback */}
-        <div className="h-8 text-center font-mono text-sm rounded-sm flex items-center justify-center mb-3 px-2">
+        <div
+          id="feedback-ticker"
+          className="h-8 text-center font-mono text-sm rounded-sm flex items-center justify-center mb-3 px-2"
+        >
           {feedbackText && feedbackType && (
             <ImmediateFeedbackTicker message={feedbackText} type={feedbackType} duration={5000} />
           )}
@@ -187,6 +197,7 @@ export default function AnalystWorkstation({
         {/* ActionStamps - Botones de Acción */}
         <div className="flex justify-center items-center gap-4 md:gap-6 mb-3">
           <button
+            id="approve-button"
             onClick={onApprove}
             className={`bg-green-500 hover:bg-green-400 text-white py-3 px-5 md:py-4 md:px-6 border-b-4 border-green-700 rounded-sm flex items-center font-mono font-bold text-base md:text-lg ${
               isLoadingCase || isLoadingNextCase || allCasesCompleted ? "opacity-50 cursor-not-allowed" : ""
@@ -197,6 +208,7 @@ export default function AnalystWorkstation({
             APROBAR
           </button>
           <button
+            id="reject-button"
             onClick={handleReject}
             className={`bg-red-500 hover:bg-red-400 text-white py-3 px-5 md:py-4 md:px-6 border-b-4 border-red-700 rounded-sm flex items-center font-mono font-bold text-base md:text-lg ${
               isLoadingCase || isLoadingNextCase || allCasesCompleted ? "opacity-50 cursor-not-allowed" : ""
@@ -223,6 +235,7 @@ export default function AnalystWorkstation({
           {/* Botón Siguiente Caso */}
           <div className="w-1/3 text-right">
             <button
+              id="next-case-button"
               onClick={onNextCase}
               disabled={isNextCaseDisabled || isLoadingCase || isLoadingNextCase || allCasesCompleted}
               className={`bg-amber-500 hover:bg-amber-400 text-white py-2 px-4 border-b-4 border-amber-700 rounded-sm flex items-center font-mono font-bold ml-auto ${
