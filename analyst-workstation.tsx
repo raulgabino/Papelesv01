@@ -9,6 +9,7 @@ import { ImmediateFeedbackTicker } from "@/components/immediate-feedback-ticker"
 
 // Tipos
 export interface CaseData {
+  id?: number
   title?: string
   sender?: string
   recipient?: string
@@ -112,6 +113,9 @@ export default function AnalystWorkstation({
     onReject()
   }
 
+  // Verificar si todos los casos han sido procesados
+  const allCasesCompleted = !currentCaseData && !isLoadingCase
+
   // Usar los datos proporcionados o los datos por defecto
   const caseToDisplay = currentCaseData || defaultCaseData
   const rulesToDisplay = rulebookContent || defaultRulebookContent
@@ -137,6 +141,16 @@ export default function AnalystWorkstation({
               <div className="animate-pulse flex flex-col items-center">
                 <div className="mb-2">CARGANDO CASO...</div>
                 <div className="h-2 w-24 bg-slate-600 rounded"></div>
+              </div>
+            </div>
+          ) : allCasesCompleted ? (
+            <div className="w-full h-full flex items-center justify-center text-amber-300 font-mono">
+              <div className="text-center max-w-md">
+                <h2 className="text-2xl mb-4">¡JORNADA FINALIZADA!</h2>
+                <p className="mb-4">Has completado todos los casos disponibles.</p>
+                <p>
+                  Puntuación final: <span className="text-green-400 font-bold">{score}</span> puntos
+                </p>
               </div>
             </div>
           ) : (
@@ -174,16 +188,20 @@ export default function AnalystWorkstation({
         <div className="flex justify-center items-center gap-4 md:gap-6 mb-3">
           <button
             onClick={onApprove}
-            className="bg-green-500 hover:bg-green-400 text-white py-3 px-5 md:py-4 md:px-6 border-b-4 border-green-700 rounded-sm flex items-center font-mono font-bold text-base md:text-lg"
-            disabled={isLoadingCase || isLoadingNextCase}
+            className={`bg-green-500 hover:bg-green-400 text-white py-3 px-5 md:py-4 md:px-6 border-b-4 border-green-700 rounded-sm flex items-center font-mono font-bold text-base md:text-lg ${
+              isLoadingCase || isLoadingNextCase || allCasesCompleted ? "opacity-50 cursor-not-allowed" : ""
+            }`}
+            disabled={isLoadingCase || isLoadingNextCase || allCasesCompleted}
           >
             <Check className="w-6 h-6 mr-2" style={{ imageRendering: "pixelated" }} />
             APROBAR
           </button>
           <button
             onClick={handleReject}
-            className="bg-red-500 hover:bg-red-400 text-white py-3 px-5 md:py-4 md:px-6 border-b-4 border-red-700 rounded-sm flex items-center font-mono font-bold text-base md:text-lg"
-            disabled={isLoadingCase || isLoadingNextCase}
+            className={`bg-red-500 hover:bg-red-400 text-white py-3 px-5 md:py-4 md:px-6 border-b-4 border-red-700 rounded-sm flex items-center font-mono font-bold text-base md:text-lg ${
+              isLoadingCase || isLoadingNextCase || allCasesCompleted ? "opacity-50 cursor-not-allowed" : ""
+            }`}
+            disabled={isLoadingCase || isLoadingNextCase || allCasesCompleted}
           >
             <X className="w-6 h-6 mr-2" style={{ imageRendering: "pixelated" }} />
             RECHAZAR
@@ -206,9 +224,11 @@ export default function AnalystWorkstation({
           <div className="w-1/3 text-right">
             <button
               onClick={onNextCase}
-              disabled={isNextCaseDisabled || isLoadingCase || isLoadingNextCase}
+              disabled={isNextCaseDisabled || isLoadingCase || isLoadingNextCase || allCasesCompleted}
               className={`bg-amber-500 hover:bg-amber-400 text-white py-2 px-4 border-b-4 border-amber-700 rounded-sm flex items-center font-mono font-bold ml-auto ${
-                isNextCaseDisabled || isLoadingCase || isLoadingNextCase ? "opacity-50 cursor-not-allowed" : ""
+                isNextCaseDisabled || isLoadingCase || isLoadingNextCase || allCasesCompleted
+                  ? "opacity-50 cursor-not-allowed"
+                  : ""
               }`}
             >
               SIGUIENTE CASO

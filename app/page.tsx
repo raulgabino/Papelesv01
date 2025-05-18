@@ -14,15 +14,42 @@ export default function Home() {
   const [feedbackType, setFeedbackType] = useState<"success" | "error" | "info" | null>(null)
   const [caseReviewed, setCaseReviewed] = useState(false)
 
-  // Datos de ejemplo para el caso actual
-  const currentCaseData = {
-    title: "MEMORÁNDUM INTERNO",
-    sender: "Ana Gómez, Departamento de Innovación",
-    recipient: "Sr. Rodríguez, Director de Operaciones",
-    subject: "Propuesta de Proyecto: EcoIniciativa Oficina Verde",
-    body: "Estimado Sr. Rodríguez,\n\nLe escribo para proponer una nueva iniciativa que creo firmemente que será de gran beneficio. Se trata de implementar un sistema de reciclaje más eficiente y reducir nuestro consumo energético. Esto no solo ayudará al planeta, sino que también podría mejorar nuestra imagen corporativa y, a largo plazo, generar ahorros significativos.\n\nHe adjuntado un documento con más detalles, pero la idea central es instalar nuevos contenedores y cambiar a luces LED. Necesitaríamos una pequeña inversión inicial, pero los retornos son prometedores.\n\n¿Qué le parece si lo discutimos la próxima semana? Avíseme su disponibilidad.\n\nSaludos cordiales,\nAna Gómez\nDepartamento de Innovación",
-    attachments: ["Detalles_EcoIniciativa.pdf", "Presupuesto_Estimado.xlsx"],
-  }
+  // Nuevo estado para rastrear el índice del caso actual
+  const [currentCaseIndex, setCurrentCaseIndex] = useState(0)
+
+  // Array de casos en lugar de un solo caso estático
+  const allCases = [
+    {
+      id: 1,
+      title: "MEMORÁNDUM INTERNO",
+      sender: "Ana Gómez, Dept. Innovación",
+      recipient: "Sr. Rodríguez, Dir. Operaciones",
+      subject: "Propuesta Proyecto: EcoIniciativa Oficina Verde",
+      body: "Estimado Sr. Rodríguez,\n\nPropongo implementar un sistema de reciclaje eficiente y reducir consumo energético. Adjunto detalles y presupuesto. ¿Podríamos discutirlo la próxima semana?\n\nSaludos,\nAna Gómez",
+      attachments: ["Detalles_EcoIniciativa.pdf", "Presupuesto_Estimado.xlsx"],
+    },
+    {
+      id: 2,
+      title: "EMAIL URGENTE: Revisión de Software",
+      sender: "equipo.ti@empresa.com",
+      recipient: "Analista de Calidad (Tú)",
+      subject: "URGENTE: Fallo en sistema de login",
+      body: "Se ha detectado un fallo crítico en el nuevo módulo de login que impide el acceso a usuarios nuevos. Se requiere análisis y reporte de impacto inmediato. Prioridad ALTA.\n\nEquipo de TI.",
+      attachments: ["log_error_sistema.txt"],
+    },
+    {
+      id: 3,
+      title: "INFORME DE PROPUESTA",
+      sender: "Luis Fernandez, Marketing",
+      recipient: "Comité de Proyectos",
+      subject: "Campaña Publicitaria Q3",
+      body: "Presentamos la propuesta para la campaña publicitaria del tercer trimestre. Enfocada en redes sociales y colaboraciones con influencers. Se espera un ROI del 15%.\n\nDetalles en adjunto.\n\nGracias,\nLuis Fernandez",
+      attachments: ["Propuesta_CampañaQ3.docx", "Estimacion_Costos_Q3.xlsx"],
+    },
+  ]
+
+  // Estado para controlar si todos los casos han sido procesados
+  const [allCasesCompleted, setAllCasesCompleted] = useState(false)
 
   // Datos de ejemplo para el rulebook
   const rulebookContent = [
@@ -55,6 +82,8 @@ export default function Home() {
 
   // Manejadores de eventos
   const handleApprove = () => {
+    if (allCasesCompleted) return
+
     setFeedbackText("¡Documento APROBADO! Buen trabajo, analista.")
     setFeedbackType("success")
     setScore((prev) => prev + 10)
@@ -63,6 +92,8 @@ export default function Home() {
   }
 
   const handleReject = () => {
+    if (allCasesCompleted) return
+
     setFeedbackText("Documento RECHAZADO. Se han registrado los motivos.")
     setFeedbackType("error")
     setScore((prev) => prev + 5) // Menos puntos por rechazar
@@ -71,6 +102,8 @@ export default function Home() {
   }
 
   const handleNextCase = () => {
+    if (allCasesCompleted) return
+
     setFeedbackText("Cargando siguiente caso...")
     setFeedbackType("info")
     setIsLoadingNextCase(true)
@@ -79,10 +112,23 @@ export default function Home() {
 
     // Simular carga del siguiente caso
     setTimeout(() => {
+      // Incrementar el día
       setDayNumber((prev) => prev + 1)
-      setIsLoadingNextCase(false)
-      setFeedbackText(null)
-      setFeedbackType(null)
+
+      // Verificar si hay más casos disponibles
+      if (currentCaseIndex >= allCases.length - 1) {
+        // No hay más casos, mostrar mensaje de finalización
+        setFeedbackText("¡Todos los casos han sido procesados! Buen trabajo, Analista.")
+        setFeedbackType("success")
+        setAllCasesCompleted(true)
+        setIsLoadingNextCase(false)
+      } else {
+        // Avanzar al siguiente caso
+        setCurrentCaseIndex((prev) => prev + 1)
+        setIsLoadingNextCase(false)
+        setFeedbackText(null)
+        setFeedbackType(null)
+      }
     }, 2000)
   }
 
@@ -103,13 +149,13 @@ export default function Home() {
         dayNumber={dayNumber}
         currentSkillName="Comunicación Estratégica"
         score={score}
-        currentCaseData={currentCaseData}
+        currentCaseData={allCasesCompleted ? null : allCases[currentCaseIndex]}
         rulebookContent={rulebookContent}
         feedbackText={feedbackText}
         feedbackType={feedbackType}
         isLoadingCase={isLoadingCase}
         isLoadingNextCase={isLoadingNextCase}
-        isNextCaseDisabled={isNextCaseDisabled}
+        isNextCaseDisabled={isNextCaseDisabled || allCasesCompleted}
         onApprove={handleApprove}
         onReject={handleReject}
         onNextCase={handleNextCase}
