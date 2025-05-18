@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import AnalystWorkstation from "@/analyst-workstation"
 import { IntroSequence } from "@/components/intro-sequence"
 import { TutorialOverlay } from "@/components/tutorial-overlay"
@@ -142,9 +142,39 @@ export default function Home() {
 
   // Manejadores para la secuencia de introducción y tutorial
   const handleIntroComplete = () => {
+    // Asegurar que no haya estados de carga activos
+    setIsLoadingCase(false)
+    setIsLoadingNextCase(false)
+
+    // Establecer el estado del juego a tutorial
     setGameState("tutorial")
     setCurrentTutorialStep(0)
+
+    // Asegurar que el primer caso de tutorial esté listo
+    setCurrentCaseIndex(0)
+    setCaseReviewed(false)
+    setIsNextCaseDisabled(true)
+
+    // Mensaje de bienvenida opcional
+    setFeedbackText("Bienvenido al entrenamiento, Analista.")
+    setFeedbackType("info")
+    setTimeout(() => {
+      setFeedbackText(null)
+      setFeedbackType(null)
+    }, 3000)
   }
+
+  // Efecto para monitorear cambios en el estado del juego
+  useEffect(() => {
+    console.log(`Estado del juego cambiado a: ${gameState}`)
+
+    // Si estamos en tutorial, asegurar que el overlay esté activo
+    if (gameState === "tutorial") {
+      // Asegurar que no haya estados de carga activos que puedan bloquear la UI
+      setIsLoadingCase(false)
+      setIsLoadingNextCase(false)
+    }
+  }, [gameState])
 
   const advanceTutorialStep = () => {
     const nextStep = currentTutorialStep + 1
@@ -283,9 +313,10 @@ export default function Home() {
             onToggleRulebook={handleToggleRulebook}
           />
 
-          {isTutorialActive && (
+          {/* Renderizar el overlay de tutorial solo si estamos en estado tutorial */}
+          {gameState === "tutorial" && (
             <TutorialOverlay
-              isActive={isTutorialActive}
+              isActive={true}
               message={tutorialMessages[currentTutorialStep]?.text || ""}
               highlightElementId={tutorialMessages[currentTutorialStep]?.highlightId || undefined}
               showNextButton={tutorialMessages[currentTutorialStep]?.showButton || false}

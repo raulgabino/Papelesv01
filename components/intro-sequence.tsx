@@ -61,13 +61,14 @@ El Supervisor Principal
 
   // Manejador para el botón de aceptar misión
   const handleAcceptMission = () => {
-    if (!isTyping) {
+    // Siempre completar la transición, independientemente del estado de escritura
+    setIsTyping(false)
+    setDisplayedText(letterContentRef.current)
+
+    // Pequeño retraso para asegurar que la UI se actualice antes de completar
+    setTimeout(() => {
       onIntroComplete()
-    } else {
-      // Si aún está escribiendo, mostrar todo el texto de una vez
-      setDisplayedText(letterContentRef.current)
-      setIsTyping(false)
-    }
+    }, 100)
   }
 
   // Manejador para la tecla Enter
@@ -76,19 +77,16 @@ El Supervisor Principal
       if (e.key === "Enter") {
         if (currentState === "title") {
           handleStartGame()
-        } else if (currentState === "letter" && !isTyping) {
+        } else if (currentState === "letter") {
+          // Usar la misma lógica que el botón para consistencia
           handleAcceptMission()
-        } else if (currentState === "letter" && isTyping) {
-          // Si aún está escribiendo, mostrar todo el texto de una vez
-          setDisplayedText(letterContentRef.current)
-          setIsTyping(false)
         }
       }
     }
 
     window.addEventListener("keydown", handleKeyDown)
     return () => window.removeEventListener("keydown", handleKeyDown)
-  }, [currentState, isTyping])
+  }, [currentState])
 
   return (
     <div className="min-h-screen bg-slate-900 flex flex-col items-center justify-center p-4 font-mono">
