@@ -59,26 +59,29 @@ El Supervisor Principal
     setCurrentState("letter")
   }
 
-  // Manejador para el botón de aceptar misión
-  const handleAcceptMission = () => {
-    // Siempre completar la transición, independientemente del estado de escritura
-    setIsTyping(false)
-    setDisplayedText(letterContentRef.current)
+  // Modificar la función handleAcceptMission para garantizar que siempre complete la transición
+  // y nunca se quede en un estado intermedio
 
-    // Pequeño retraso para asegurar que la UI se actualice antes de completar
-    setTimeout(() => {
-      onIntroComplete()
-    }, 100)
+  // Reemplazar la función handleAcceptMission actual con esta versión mejorada:
+  const handleAcceptMission = () => {
+    // Forzar la finalización del efecto de escritura inmediatamente
+    setDisplayedText(letterContentRef.current)
+    setIsTyping(false)
+
+    // Llamar directamente a onIntroComplete sin setTimeout
+    // El setTimeout podría estar causando problemas si hay errores
+    onIntroComplete()
   }
 
-  // Manejador para la tecla Enter
+  // También modificar el useEffect para el manejo de la tecla Enter
+  // para que use exactamente la misma lógica:
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === "Enter") {
         if (currentState === "title") {
           handleStartGame()
         } else if (currentState === "letter") {
-          // Usar la misma lógica que el botón para consistencia
+          // Usar exactamente la misma lógica que el botón
           handleAcceptMission()
         }
       }

@@ -1,15 +1,22 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef } from "react"
 import AnalystWorkstation from "@/analyst-workstation"
 import { IntroSequence } from "@/components/intro-sequence"
 import { TutorialOverlay } from "@/components/tutorial-overlay"
 
 export default function Home() {
+  // Referencia para rastrear si el componente está montado
+  const isMounted = useRef(true)
+
+  // Estado para depuración
+  const [debugInfo, setDebugInfo] = useState<string>("")
+
   // Estado para controlar el flujo del juego
   const [gameState, setGameState] = useState<
-    "intro" | "tutorial" | "playing" | "day_end_summary" | "supervisor_review"
+    "intro" | "loading" | "tutorial" | "playing" | "day_end_summary" | "supervisor_review"
   >("intro")
+
   const [currentTutorialStep, setCurrentTutorialStep] = useState(0)
   const isTutorialActive = gameState === "tutorial"
 
@@ -24,6 +31,19 @@ export default function Home() {
   const [caseReviewed, setCaseReviewed] = useState(false)
   const [currentCaseIndex, setCurrentCaseIndex] = useState(0)
   const [allCasesCompleted, setAllCasesCompleted] = useState(false)
+
+  // Efecto para limpiar la referencia cuando el componente se desmonta
+  useEffect(() => {
+    return () => {
+      isMounted.current = false
+    }
+  }, [])
+
+  // Función para actualizar información de depuración
+  const updateDebugInfo = (message: string) => {
+    console.log(message)
+    setDebugInfo((prev) => `${prev}\n${message}`)
+  }
 
   // Mensajes del tutorial
   const tutorialMessages = [
@@ -142,57 +162,86 @@ export default function Home() {
 
   // Manejadores para la secuencia de introducción y tutorial
   const handleIntroComplete = () => {
-    // Asegurar que no haya estados de carga activos
-    setIsLoadingCase(false)
-    setIsLoadingNextCase(false)
+    try {
+      updateDebugInfo("handleIntroComplete llamado")
 
-    // Establecer el estado del juego a tutorial
-    setGameState("tutorial")
-    setCurrentTutorialStep(0)
+      // Cambiar directamente al estado tutorial sin pasar por un estado de carga
+      setGameState("tutorial")
+      updateDebugInfo("Estado cambiado a: tutorial")
 
-    // Asegurar que el primer caso de tutorial esté listo
-    setCurrentCaseIndex(0)
-    setCaseReviewed(false)
-    setIsNextCaseDisabled(true)
+      // Inicializar otros estados necesarios
+      setCurrentTutorialStep(0)
+      setCurrentCaseIndex(0)
+      setCaseReviewed(false)
+      setIsNextCaseDisabled(true)
 
-    // Mensaje de bienvenida opcional
-    setFeedbackText("Bienvenido al entrenamiento, Analista.")
-    setFeedbackType("info")
-    setTimeout(() => {
-      setFeedbackText(null)
-      setFeedbackType(null)
-    }, 3000)
-  }
-
-  // Efecto para monitorear cambios en el estado del juego
-  useEffect(() => {
-    console.log(`Estado del juego cambiado a: ${gameState}`)
-
-    // Si estamos en tutorial, asegurar que el overlay esté activo
-    if (gameState === "tutorial") {
-      // Asegurar que no haya estados de carga activos que puedan bloquear la UI
+      // Desactivar explícitamente cualquier estado de carga
       setIsLoadingCase(false)
       setIsLoadingNextCase(false)
+
+      updateDebugInfo("Inicialización de tutorial completada")
+    } catch (error) {
+      updateDebugInfo(`Error en handleIntroComplete: ${error}`)
+      // En caso de error, asegurar que no nos quedemos en un estado intermedio
+      setGameState("tutorial")
+      setIsLoadingCase(false)
+      setIsLoadingNextCase(false)
+    }
+  }
+
+  // Efecto para garantizar que nunca nos quedemos en estado de carga
+  useEffect(() => {
+    if (gameState === "loading") {
+      updateDebugInfo("Detectado estado de carga activo")
+
+      // Establecer un temporizador de seguridad para salir del estado de carga
+      const safetyTimer = setTimeout(() => {
+        if (isMounted.current && gameState === "loading") {
+          updateDebugInfo("Temporizador de seguridad activado - forzando salida del estado de carga")
+          setGameState("tutorial")
+          setIsLoadingCase(false)
+          setIsLoadingNextCase(false)
+        }
+      }, 3000) // 3 segundos como máximo en estado de carga
+
+      return () => clearTimeout(safetyTimer)
     }
   }, [gameState])
 
   const advanceTutorialStep = () => {
-    const nextStep = currentTutorialStep + 1
-    if (nextStep >= tutorialMessages.length) {
-      // Fin del tutorial, comenzar el juego real
-      setGameState("playing")
-      // Reiniciar para el primer caso real
-      setCurrentCaseIndex(1) // Saltar el caso de tutorial
-      setCaseReviewed(false)
-      setIsNextCaseDisabled(true)
-      setFeedbackText("¡Comienza tu primera jornada real!")
-      setFeedbackType("info")
-      setTimeout(() => {
-        setFeedbackText(null)
-        setFeedbackType(null)
-      }, 3000)
-    } else {
-      setCurrentTutorialStep(nextStep)
+    try {
+      updateDebugInfo(`Avanzando paso de tutorial: ${currentTutorialStep} -> ${currentTutorialStep + 1}`)
+
+      const nextStep = currentTutorialStep + 1
+      if (nextStep >= tutorialMessages.length) {
+        // Fin del tutorial, comenzar el juego real
+        updateDebugInfo("Fin del tutorial, cambiando a modo de juego")
+        setGameState("playing")
+
+        // Reiniciar para el primer caso real
+        setCurrentCaseIndex(1) // Saltar el caso de tutorial
+        setCaseReviewed(false)
+        setIsNextCaseDisabled(true)
+        setFeedbackText("¡Comienza tu primera jornada real!")
+        setFeedbackType("info")
+
+        // Asegurar que no haya estados de carga activos
+        setIsLoadingCase(false)
+        setIsLoadingNextCase(false)
+
+        setTimeout(() => {
+          if (isMounted.current) {
+            setFeedbackText(null)
+            setFeedbackType(null)
+          }
+        }, 3000)
+      } else {
+        setCurrentTutorialStep(nextStep)
+      }
+    } catch (error) {
+      updateDebugInfo(`Error en advanceTutorialStep: ${error}`)
+      // En caso de error, intentar avanzar de todos modos
+      setCurrentTutorialStep((prev) => prev + 1)
     }
   }
 
@@ -210,7 +259,9 @@ export default function Home() {
     if (isTutorialActive && tutorialMessages[currentTutorialStep]?.highlightId === "approve-button") {
       // Avanzar automáticamente al siguiente paso después de un breve retraso
       setTimeout(() => {
-        advanceTutorialStep()
+        if (isMounted.current) {
+          advanceTutorialStep()
+        }
       }, 1500)
     }
   }
@@ -228,7 +279,9 @@ export default function Home() {
     if (isTutorialActive && tutorialMessages[currentTutorialStep]?.highlightId === "reject-button") {
       // Avanzar automáticamente al siguiente paso después de un breve retraso
       setTimeout(() => {
-        advanceTutorialStep()
+        if (isMounted.current) {
+          advanceTutorialStep()
+        }
       }, 1500)
     }
   }
@@ -251,6 +304,8 @@ export default function Home() {
 
     // Simular carga del siguiente caso
     setTimeout(() => {
+      if (!isMounted.current) return
+
       // Incrementar el día
       setDayNumber((prev) => prev + 1)
 
@@ -279,21 +334,44 @@ export default function Home() {
     if (isTutorialActive && tutorialMessages[currentTutorialStep]?.highlightId === "rulebook-button") {
       // Avanzar automáticamente al siguiente paso después de un breve retraso
       setTimeout(() => {
-        advanceTutorialStep()
+        if (isMounted.current) {
+          advanceTutorialStep()
+        }
       }, 1500)
     }
 
     // Limpiar el mensaje después de un tiempo
     setTimeout(() => {
-      setFeedbackText(null)
-      setFeedbackType(null)
+      if (isMounted.current) {
+        setFeedbackText(null)
+        setFeedbackType(null)
+      }
     }, 2000)
   }
 
+  // Componente de pantalla de carga
+  const LoadingScreen = () => (
+    <div className="min-h-screen bg-slate-800 flex flex-col items-center justify-center">
+      <div className="w-full h-2 bg-amber-300 mb-8"></div>
+      <div className="text-center">
+        <button
+          disabled
+          className="bg-blue-500 text-white py-3 px-6 border-b-4 border-blue-700 font-mono font-bold opacity-70 cursor-not-allowed"
+        >
+          ESPERE...
+        </button>
+        <p className="text-slate-400 mt-4 text-sm font-mono">Preparando estación de trabajo...</p>
+      </div>
+    </div>
+  )
+
   return (
     <main className="min-h-screen bg-slate-900">
+      {/* Renderizado condicional basado en el estado del juego */}
       {gameState === "intro" ? (
         <IntroSequence onIntroComplete={handleIntroComplete} />
+      ) : gameState === "loading" ? (
+        <LoadingScreen />
       ) : (
         <>
           <AnalystWorkstation
@@ -322,6 +400,18 @@ export default function Home() {
               showNextButton={tutorialMessages[currentTutorialStep]?.showButton || false}
               onNextStep={advanceTutorialStep}
             />
+          )}
+
+          {/* Panel de depuración - solo visible en desarrollo */}
+          {process.env.NODE_ENV === "development" && (
+            <div className="fixed bottom-0 right-0 bg-black/80 text-white p-2 text-xs font-mono max-w-xs max-h-40 overflow-auto">
+              <div>Estado: {gameState}</div>
+              <div>Paso tutorial: {currentTutorialStep}</div>
+              <div>Caso: {currentCaseIndex}</div>
+              <div>Cargando: {isLoadingCase || isLoadingNextCase ? "Sí" : "No"}</div>
+              <div className="mt-1 border-t border-gray-700 pt-1">Log:</div>
+              <pre>{debugInfo}</pre>
+            </div>
           )}
         </>
       )}
