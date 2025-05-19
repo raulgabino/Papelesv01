@@ -10,6 +10,7 @@ export function IntroSequence({ onIntroComplete }: IntroSequenceProps) {
   const [currentState, setCurrentState] = useState<"title" | "letter">("title")
   const [displayedText, setDisplayedText] = useState("")
   const [isTyping, setIsTyping] = useState(false)
+  const introCompleted = useRef(false)
   const letterContentRef = useRef<string>(`
 ========================================
 MINISTERIO DE ESTÁNDARES PROFESIONALES
@@ -59,29 +60,36 @@ El Supervisor Principal
     setCurrentState("letter")
   }
 
-  // Modificar la función handleAcceptMission para garantizar que siempre complete la transición
-  // y nunca se quede en un estado intermedio
-
-  // Reemplazar la función handleAcceptMission actual con esta versión mejorada:
+  // CORRECCIÓN CRÍTICA: Función simplificada para manejar la aceptación de la misión
+  // Esta función DEBE llamar a onIntroComplete de forma directa y garantizada
   const handleAcceptMission = () => {
-    // Forzar la finalización del efecto de escritura inmediatamente
-    setDisplayedText(letterContentRef.current)
-    setIsTyping(false)
+    // console.log('[DEBUG] handleAcceptMission: INICIO');
 
-    // Llamar directamente a onIntroComplete sin setTimeout
-    // El setTimeout podría estar causando problemas si hay errores
-    onIntroComplete()
+    // Si aún está escribiendo, mostrar todo el texto de una vez
+    if (isTyping) {
+      setDisplayedText(letterContentRef.current)
+      setIsTyping(false)
+    }
+
+    // Evitar llamadas múltiples a onIntroComplete
+    if (!introCompleted.current) {
+      introCompleted.current = true
+      // console.log('[DEBUG] handleAcceptMission: Llamando a onIntroComplete');
+
+      // Llamar DIRECTAMENTE a onIntroComplete sin setTimeout
+      onIntroComplete()
+    }
+
+    // console.log('[DEBUG] handleAcceptMission: FIN');
   }
 
-  // También modificar el useEffect para el manejo de la tecla Enter
-  // para que use exactamente la misma lógica:
+  // Manejador para la tecla Enter - SIMPLIFICADO
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === "Enter") {
         if (currentState === "title") {
           handleStartGame()
         } else if (currentState === "letter") {
-          // Usar exactamente la misma lógica que el botón
           handleAcceptMission()
         }
       }
